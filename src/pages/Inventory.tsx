@@ -308,3 +308,5 @@ const Inventory: React.FC = () => {
 };
 
 export default Inventory;
+
+export { Inventory }
