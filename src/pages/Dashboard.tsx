@@ -14,6 +14,7 @@ import { AIInsights } from '../components/AI/AIInsights';
 import { AIChat } from '../components/AI/AIChat';
 import { grokAI } from '../lib/grokApi';
 
+const Dashboard = () => {
   // Mock data for demonstration
   const salesData = [
     { month: 'Jan', sales: 45000, orders: 120 },
@@ -232,4 +233,4 @@ import { grokAI } from '../lib/grokApi';
 
 export default Dashboard;
 
-export { Dashboard }
+export { Dashboard };
