@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { AIInsights } from '../components/AI/AIInsights';
 
+const Inventory = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -308,4 +309,4 @@ import { AIInsights } from '../components/AI/AIInsights';
 
 export default Inventory;
 
-export { Inventory }
+export { Inventory };
