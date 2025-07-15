@@ -56,10 +56,11 @@ export const AIChat: React.FC = () => {
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
+      console.error('AI Chat Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: 'I apologize, but I\'m having trouble processing your request right now. Please try again later.',
+        content: 'I apologize, but I\'m having trouble processing your request right now. Please check your connection and try again.',
         timestamp: new Date()
       };
 

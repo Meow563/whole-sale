@@ -1,5 +1,5 @@
 // Grok AI API Integration for Medicine Wholesale System
-const GROK_API_KEY = 'xai-oUw9JxN8s69VxkCkxLE1F0NEZz2WV8sUmZi3nW0O7rr4jBJ8OOTcJKEthAnKnnGoKrwf5KboLA56VhnV';
+const GROK_API_KEY = import.meta.env.VITE_GROK_API_KEY || 'xai-oUw9JxN8s69VxkCkxLE1F0NEZz2WV8sUmZi3nW0O7rr4jBJ8OOTcJKEthAnKnnGoKrwf5KboLA56VhnV';
 const GROK_API_URL = 'https://api.x.ai/v1/chat/completions';
 
 interface GrokMessage {

@@ -14,7 +14,7 @@ export const AIInsights: React.FC<AIInsightsProps> = ({ type, data = [], title }
   const [error, setError] = useState<string | null>(null);
 
   const getInsights = async () => {
-    if (!data.length) return;
+    if (!data || data.length === 0) return;
     
     setLoading(true);
     setError(null);

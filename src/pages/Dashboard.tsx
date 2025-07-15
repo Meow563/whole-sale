@@ -12,8 +12,8 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { AIInsights } from '../components/AI/AIInsights';
 import { AIChat } from '../components/AI/AIChat';
+import { grokAI } from '../lib/grokApi';
 
-const Dashboard: React.FC = () => {
   // Mock data for demonstration
   const salesData = [
     { month: 'Jan', sales: 45000, orders: 120 },

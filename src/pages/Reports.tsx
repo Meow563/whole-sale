@@ -27,7 +27,6 @@ import {
 } from 'recharts';
 import { AIInsights } from '../components/AI/AIInsights';
 
-const Reports: React.FC = () => {
   const [selectedReport, setSelectedReport] = useState('sales');
   const [dateRange, setDateRange] = useState('last30days');
 

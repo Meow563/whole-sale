@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { AIInsights } from '../components/AI/AIInsights';
 
-const Inventory: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
