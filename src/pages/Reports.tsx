@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 import { AIInsights } from '../components/AI/AIInsights';
 
+const Reports = () => {
   const [selectedReport, setSelectedReport] = useState('sales');
   const [dateRange, setDateRange] = useState('last30days');
 
@@ -350,4 +351,4 @@ import { AIInsights } from '../components/AI/AIInsights';
 
 export default Reports;
 
-export { Reports }
+export { Reports };
