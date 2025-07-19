@@ -46,17 +46,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signIn = async (email: string, password: string) => {
     // Check for demo credentials first
     if (email === 'admin@medwholesale.com' && password === 'password123') {
-      // Try Supabase authentication first
-      try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (!error) return; // Success with Supabase
-      } catch (supabaseError) {
-        // Supabase failed, continue to fallback
-      }
-      
       // Fallback to demo user if Supabase fails
       setUser(DEMO_USER);
       return;
