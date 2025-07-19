@@ -12,6 +12,15 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Demo user for fallback authentication
+const DEMO_USER = {
+  id: 'demo-user-id',
+  email: 'admin@medwholesale.com',
+  user_metadata: { name: 'Demo Admin' },
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+} as User;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,6 +44,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    // Check for demo credentials first
+    if (email === 'admin@medwholesale.com' && password === 'password123') {
+      // Try Supabase authentication first
+      try {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        if (!error) return; // Success with Supabase
+      } catch (supabaseError) {
+        // Supabase failed, continue to fallback
+      }
+      
+      // Fallback to demo user if Supabase fails
+      setUser(DEMO_USER);
+      return;
+    }
+    
+    // For non-demo credentials, try Supabase
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -56,6 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signOut = async () => {
+    // Check if using demo user
+    if (user?.id === 'demo-user-id') {
+      setUser(null);
+      return;
+    }
+    
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
