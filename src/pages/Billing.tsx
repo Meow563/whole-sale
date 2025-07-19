@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Filter, FileText, Eye, Download, Send, Edit, Trash2, ShoppingCart, ArrowLeft, Save, Printer, X, ArrowUp, ArrowDown, ArrowRight, ArrowLeft as ArrowLeftIcon, Enter } from 'lucide-react';
+import { Plus, Search, Filter, FileText, Eye, Download, Send, Edit, Trash2, ShoppingCart, ArrowLeft, Save, Printer, X, ArrowUp, ArrowDown, ArrowRight, ArrowLeft as ArrowLeftIcon, Pointer as Enter } from 'lucide-react';
 
 const mockInvoices = [
   {
