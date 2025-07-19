@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Plus, Search, Filter, FileText, Eye, Download, Send, Edit, Trash2, ShoppingCart, ArrowLeft, Save, Printer, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Plus, Search, Filter, FileText, Eye, Download, Send, Edit, Trash2, ShoppingCart, ArrowLeft, Save, Printer, X, ArrowUp, ArrowDown, ArrowRight, ArrowLeft as ArrowLeftIcon, Enter } from 'lucide-react';
 
 const mockInvoices = [
   {
@@ -90,72 +90,167 @@ const mockInvoices = [
 ];
 
 // Keyboard shortcuts help modal
-const KeyboardShortcutsHelp = ({ isOpen, onClose }) => {
+const KeyboardShortcutsHelp = ({ isOpen, onClose, focusedElement }) => {
+  const helpRef = useRef(null);
+
+  useEffect(() => {
+    if (isOpen && helpRef.current) {
+      helpRef.current.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'F1') {
+        e.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+      <div 
+        ref={helpRef}
+        tabIndex={-1}
+        className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-96 overflow-y-auto focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Keyboard Shortcuts</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
+          <h3 className="text-lg font-semibold">Keyboard Navigation Guide</h3>
+          <span className="text-sm text-gray-500">Press ESC or F1 to close</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <h4 className="font-medium mb-2">Navigation</h4>
-            <div className="space-y-1 text-sm">
+            <h4 className="font-medium mb-3 text-blue-600">Navigation Keys</h4>
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Back</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + B</kbd>
+                <span>Move Up</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">↑</kbd>
               </div>
               <div className="flex justify-between">
-                <span>Exit</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + X</kbd>
+                <span>Move Down</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">↓</kbd>
               </div>
               <div className="flex justify-between">
-                <span>Help</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">F1</kbd>
+                <span>Move Left</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">←</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Move Right</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">→</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Select/Activate</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Enter</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Tab Navigation</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Tab</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Reverse Tab</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Shift+Tab</kbd>
               </div>
             </div>
           </div>
+          
           <div>
-            <h4 className="font-medium mb-2">Actions</h4>
-            <div className="space-y-1 text-sm">
+            <h4 className="font-medium mb-3 text-green-600">Action Shortcuts</h4>
+            <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>New Invoice</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + N</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Save</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + S</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Print</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + P</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Edit</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + E</kbd>
-              </div>
-              <div className="flex justify-between">
-                <span>Delete</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + D</kbd>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+N</kbd>
               </div>
               <div className="flex justify-between">
                 <span>Create Purchase</span>
-                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + C</kbd>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+P</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Save</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+S</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Print</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+Shift+P</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Edit Selected</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+E</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Delete Selected</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Delete</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Search</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Ctrl+F</kbd>
               </div>
             </div>
           </div>
+          
+          <div>
+            <h4 className="font-medium mb-3 text-purple-600">System Controls</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Back/Cancel</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Escape</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Help</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">F1</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Exit Application</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Alt+F4</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Refresh</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">F5</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Home</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">Home</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>End</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">End</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Page Up</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">PgUp</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Page Down</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded text-xs">PgDn</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <h4 className="font-medium text-blue-800 mb-2">Quick Tips:</h4>
+          <ul className="text-sm text-blue-700 space-y-1">
+            <li>• Use arrow keys to navigate between table rows and form fields</li>
+            <li>• Press Enter to activate buttons or select items</li>
+            <li>• Use Tab to move between sections and Shift+Tab to go back</li>
+            <li>• All actions can be performed without using a mouse</li>
+            <li>• Press F1 anytime to see this help guide</li>
+          </ul>
         </div>
       </div>
     </div>
   );
 };
 
-// Create Bill/Purchase Modal
+// Create Bill/Purchase Modal with full keyboard navigation
 const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
   const [formData, setFormData] = useState({
     customerName: '',
@@ -183,6 +278,16 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
   });
 
   const [margin, setMargin] = useState(0);
+  const [focusedField, setFocusedField] = useState(0);
+  const modalRef = useRef(null);
+  const fieldRefs = useRef([]);
+
+  // Form fields in tab order
+  const formFields = [
+    'customerName', 'address', 'mobile', 'entryNo', 'refNo', 'excise',
+    'product', 'batch', 'expiryDate', 'mrp', 'retailPrice', 'tradePrice',
+    'qty', 'qtyUnit', 'tradeDisc', 'tax', 'addItem', 'save', 'print', 'cancel'
+  ];
 
   useEffect(() => {
     if (currentItem.retailPrice && currentItem.tradePrice) {
@@ -192,6 +297,92 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
       setMargin(calculatedMargin.toFixed(2));
     }
   }, [currentItem.retailPrice, currentItem.tradePrice]);
+
+  useEffect(() => {
+    if (isOpen && modalRef.current) {
+      modalRef.current.focus();
+      setFocusedField(0);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          onClose();
+          break;
+        
+        case 'Tab':
+          e.preventDefault();
+          if (e.shiftKey) {
+            setFocusedField(prev => prev > 0 ? prev - 1 : formFields.length - 1);
+          } else {
+            setFocusedField(prev => prev < formFields.length - 1 ? prev + 1 : 0);
+          }
+          break;
+        
+        case 'ArrowUp':
+          e.preventDefault();
+          setFocusedField(prev => prev > 0 ? prev - 1 : formFields.length - 1);
+          break;
+        
+        case 'ArrowDown':
+          e.preventDefault();
+          setFocusedField(prev => prev < formFields.length - 1 ? prev + 1 : 0);
+          break;
+        
+        case 'Enter':
+          e.preventDefault();
+          const currentField = formFields[focusedField];
+          if (currentField === 'addItem') {
+            handleAddItem();
+          } else if (currentField === 'save') {
+            handleSave();
+          } else if (currentField === 'print') {
+            window.print();
+          } else if (currentField === 'cancel') {
+            onClose();
+          }
+          break;
+        
+        case 'F1':
+          e.preventDefault();
+          // Could open help specific to this modal
+          break;
+      }
+
+      // Ctrl shortcuts
+      if (e.ctrlKey) {
+        switch (e.key.toLowerCase()) {
+          case 's':
+            e.preventDefault();
+            handleSave();
+            break;
+          case 'p':
+            if (e.shiftKey) {
+              e.preventDefault();
+              window.print();
+            }
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, focusedField, onClose]);
+
+  // Focus the current field
+  useEffect(() => {
+    const currentFieldName = formFields[focusedField];
+    const fieldElement = fieldRefs.current[currentFieldName];
+    if (fieldElement) {
+      fieldElement.focus();
+    }
+  }, [focusedField]);
 
   const handleAddItem = () => {
     if (currentItem.product && currentItem.qty) {
@@ -224,6 +415,9 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
         tradeDisc: '',
         tax: 'SG2'
       });
+      
+      // Focus back to product field
+      setFocusedField(6); // product field index
     }
   };
 
@@ -233,19 +427,36 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
     onClose();
   };
 
+  const getFieldClassName = (fieldName) => {
+    const baseClass = "input";
+    const focusedClass = formFields[focusedField] === fieldName ? 
+      "ring-2 ring-blue-500 border-blue-500 bg-blue-50" : "";
+    return `${baseClass} ${focusedClass}`;
+  };
+
+  const getButtonClassName = (buttonName) => {
+    const baseClass = formFields[focusedField] === buttonName ? 
+      "ring-2 ring-blue-500 bg-blue-600 text-white" : "";
+    return baseClass;
+  };
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg w-full max-w-6xl mx-4 max-h-screen overflow-y-auto">
+      <div 
+        ref={modalRef}
+        tabIndex={-1}
+        className="bg-white rounded-lg w-full max-w-6xl mx-4 max-h-screen overflow-y-auto focus:outline-none"
+      >
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold">
               Create {type === 'invoice' ? 'Invoice' : 'Purchase Order'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <X className="w-6 h-6" />
-            </button>
+            <div className="text-sm text-gray-500">
+              Use Tab/Arrow keys to navigate • Enter to select • Esc to close
+            </div>
           </div>
 
           {/* Customer Information */}
@@ -255,41 +466,34 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Name *</label>
                   <input
+                    ref={el => fieldRefs.current['customerName'] = el}
                     type="text"
                     value={formData.customerName}
                     onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-                    className="input"
+                    className={getFieldClassName('customerName')}
                     placeholder="Customer name"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Refer By</label>
-                  <input type="text" className="input" placeholder="Reference" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                    className="input h-20 resize-none"
-                    placeholder="Customer address"
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Mobile No.</label>
+                  <input
+                    ref={el => fieldRefs.current['mobile'] = el}
+                    type="text"
+                    value={formData.mobile}
+                    onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
+                    className={getFieldClassName('mobile')}
+                    placeholder="Mobile number"
                   />
                 </div>
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Mobile No.</label>
-                    <input
-                      type="text"
-                      value={formData.mobile}
-                      onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
-                      className="input"
-                      placeholder="Mobile number"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Balance</label>
-                    <input type="text" className="input" placeholder="0.00" />
-                  </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
+                  <textarea
+                    ref={el => fieldRefs.current['address'] = el}
+                    value={formData.address}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    className={`${getFieldClassName('address')} h-20 resize-none`}
+                    placeholder="Customer address"
+                  />
                 </div>
               </div>
             </div>
@@ -298,35 +502,42 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Entry No.</label>
                 <input
+                  ref={el => fieldRefs.current['entryNo'] = el}
                   type="text"
                   value={formData.entryNo}
                   onChange={(e) => setFormData(prev => ({ ...prev, entryNo: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('entryNo')}
                   placeholder="Entry number"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Ref. No.</label>
                 <input
+                  ref={el => fieldRefs.current['refNo'] = el}
                   type="text"
                   value={formData.refNo}
                   onChange={(e) => setFormData(prev => ({ ...prev, refNo: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('refNo')}
                   placeholder="Reference number"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Excise</label>
                 <input
+                  ref={el => fieldRefs.current['excise'] = el}
                   type="text"
                   value={formData.excise}
                   onChange={(e) => setFormData(prev => ({ ...prev, excise: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('excise')}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
-                <input type="date" className="input" defaultValue={new Date().toISOString().split('T')[0]} />
+                <input 
+                  type="date" 
+                  className="input" 
+                  defaultValue={new Date().toISOString().split('T')[0]} 
+                />
               </div>
             </div>
           </div>
@@ -338,40 +549,44 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Product *</label>
                 <input
+                  ref={el => fieldRefs.current['product'] = el}
                   type="text"
                   value={currentItem.product}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, product: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('product')}
                   placeholder="Product name"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Batch</label>
                 <input
+                  ref={el => fieldRefs.current['batch'] = el}
                   type="text"
                   value={currentItem.batch}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, batch: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('batch')}
                   placeholder="Batch number"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Expiry Date</label>
                 <input
+                  ref={el => fieldRefs.current['expiryDate'] = el}
                   type="text"
                   value={currentItem.expiryDate}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, expiryDate: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('expiryDate')}
                   placeholder="MM/YY"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">MRP</label>
                 <input
+                  ref={el => fieldRefs.current['mrp'] = el}
                   type="number"
                   value={currentItem.mrp}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, mrp: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('mrp')}
                   placeholder="0.00"
                 />
               </div>
@@ -380,44 +595,46 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
             {/* Pricing Sections */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
               {/* Retail Price Section */}
-              <div className="bg-blue-50 p-4 rounded-lg">
+              <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
                 <h4 className="font-medium text-blue-800 mb-2">Retail Price Section</h4>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Retail Price</label>
                   <input
+                    ref={el => fieldRefs.current['retailPrice'] = el}
                     type="number"
                     value={currentItem.retailPrice}
                     onChange={(e) => setCurrentItem(prev => ({ ...prev, retailPrice: e.target.value }))}
-                    className="input"
+                    className={getFieldClassName('retailPrice')}
                     placeholder="0.00"
                   />
                 </div>
               </div>
 
               {/* Trade Price Section */}
-              <div className="bg-green-50 p-4 rounded-lg">
+              <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
                 <h4 className="font-medium text-green-800 mb-2">Trade Price Section</h4>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Trade Price</label>
                   <input
+                    ref={el => fieldRefs.current['tradePrice'] = el}
                     type="number"
                     value={currentItem.tradePrice}
                     onChange={(e) => setCurrentItem(prev => ({ ...prev, tradePrice: e.target.value }))}
-                    className="input"
+                    className={getFieldClassName('tradePrice')}
                     placeholder="0.00"
                   />
                 </div>
               </div>
 
               {/* Margin Section */}
-              <div className="bg-yellow-50 p-4 rounded-lg">
+              <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
                 <h4 className="font-medium text-yellow-800 mb-2">Margin Section</h4>
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Margin %</label>
                   <input
                     type="text"
                     value={margin}
-                    className="input bg-gray-100"
+                    className="input bg-gray-100 font-bold text-lg"
                     readOnly
                     placeholder="Auto-calculated"
                   />
@@ -429,19 +646,21 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Quantity *</label>
                 <input
+                  ref={el => fieldRefs.current['qty'] = el}
                   type="number"
                   value={currentItem.qty}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, qty: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('qty')}
                   placeholder="0"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Unit</label>
                 <select
+                  ref={el => fieldRefs.current['qtyUnit'] = el}
                   value={currentItem.qtyUnit}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, qtyUnit: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('qtyUnit')}
                 >
                   <option value="TAB">TAB</option>
                   <option value="CAP">CAP</option>
@@ -452,19 +671,21 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Trade Disc.</label>
                 <input
+                  ref={el => fieldRefs.current['tradeDisc'] = el}
                   type="number"
                   value={currentItem.tradeDisc}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, tradeDisc: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('tradeDisc')}
                   placeholder="0.00"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Tax</label>
                 <select
+                  ref={el => fieldRefs.current['tax'] = el}
                   value={currentItem.tax}
                   onChange={(e) => setCurrentItem(prev => ({ ...prev, tax: e.target.value }))}
-                  className="input"
+                  className={getFieldClassName('tax')}
                 >
                   <option value="SG2">SG2</option>
                   <option value="SG1">SG1</option>
@@ -473,10 +694,11 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
               </div>
               <div className="flex items-end">
                 <button
+                  ref={el => fieldRefs.current['addItem'] = el}
                   onClick={handleAddItem}
-                  className="btn-primary w-full"
+                  className={`btn-primary w-full ${getButtonClassName('addItem')}`}
                 >
-                  Add Item
+                  Add Item (Enter)
                 </button>
               </div>
             </div>
@@ -485,7 +707,7 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
           {/* Items Table */}
           {formData.items.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-4">Items Added</h3>
+              <h3 className="text-lg font-semibold mb-4">Items Added ({formData.items.length})</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-gray-300">
                   <thead>
@@ -501,20 +723,21 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
                   </thead>
                   <tbody>
                     {formData.items.map((item, index) => (
-                      <tr key={item.id}>
+                      <tr key={item.id} className="hover:bg-gray-50">
                         <td className="border border-gray-300 px-2 py-2 text-sm">{item.sr_no}</td>
                         <td className="border border-gray-300 px-2 py-2 text-sm">{item.product}</td>
                         <td className="border border-gray-300 px-2 py-2 text-sm">{item.batch}</td>
                         <td className="border border-gray-300 px-2 py-2 text-sm">{item.qty}</td>
                         <td className="border border-gray-300 px-2 py-2 text-sm">{item.tradePrice}</td>
-                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.final_amount.toFixed(2)}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm font-medium">{item.final_amount.toFixed(2)}</td>
                         <td className="border border-gray-300 px-2 py-2 text-sm">
                           <button
                             onClick={() => setFormData(prev => ({
                               ...prev,
                               items: prev.items.filter(i => i.id !== item.id)
                             }))}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-600 hover:text-red-800 p-1"
+                            title="Delete item"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -529,17 +752,26 @@ const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
 
           {/* Action Buttons */}
           <div className="flex justify-center space-x-4 pt-6 border-t">
-            <button onClick={() => setFormData({ customerName: '', address: '', mobile: '', entryNo: '', refNo: '', excise: 'Not Applicable', consumptionDays: '', orderFrequency: '', items: [] })} className="btn-secondary">
-              New (Alt+N)
+            <button 
+              ref={el => fieldRefs.current['save'] = el}
+              onClick={handleSave} 
+              className={`btn-primary ${getButtonClassName('save')}`}
+            >
+              Save (Ctrl+S)
             </button>
-            <button onClick={handleSave} className="btn-primary">
-              Save (Alt+S)
+            <button 
+              ref={el => fieldRefs.current['print'] = el}
+              onClick={() => window.print()} 
+              className={`btn-secondary ${getButtonClassName('print')}`}
+            >
+              Print (Ctrl+Shift+P)
             </button>
-            <button onClick={() => window.print()} className="btn-secondary">
-              Print (Alt+P)
-            </button>
-            <button onClick={onClose} className="btn-secondary">
-              Cancel (Alt+C)
+            <button 
+              ref={el => fieldRefs.current['cancel'] = el}
+              onClick={onClose} 
+              className={`btn-secondary ${getButtonClassName('cancel')}`}
+            >
+              Cancel (Esc)
             </button>
           </div>
         </div>
@@ -554,69 +786,13 @@ export function Billing() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
-  const [showDetailView, setShowDetailView] = useState(false);
+  const [selectedRowIndex, setSelectedRowIndex] = useState(0);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [createType, setCreateType] = useState('invoice');
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.altKey) {
-        switch (event.key.toLowerCase()) {
-          case 'n':
-            event.preventDefault();
-            setCreateType('invoice');
-            setShowCreateModal(true);
-            break;
-          case 'c':
-            event.preventDefault();
-            setCreateType('purchase');
-            setShowPurchaseModal(true);
-            break;
-          case 'b':
-            event.preventDefault();
-            if (showDetailView) {
-              setShowDetailView(false);
-            } else {
-              window.history.back();
-            }
-            break;
-          case 'x':
-            event.preventDefault();
-            if (window.confirm('Are you sure you want to exit?')) {
-              window.close();
-            }
-            break;
-          case 'e':
-            event.preventDefault();
-            if (selectedInvoice) {
-              setShowDetailView(true);
-            }
-            break;
-          case 's':
-            event.preventDefault();
-            console.log('Save action triggered');
-            break;
-          case 'p':
-            event.preventDefault();
-            window.print();
-            break;
-          case 'd':
-            event.preventDefault();
-            if (selectedInvoice && window.confirm('Are you sure you want to delete this invoice?')) {
-              console.log('Delete invoice:', selectedInvoice.id);
-            }
-            break;
-        }
-      } else if (event.key === 'F1') {
-        event.preventDefault();
-        setShowKeyboardHelp(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showDetailView, selectedInvoice]);
+  const [focusedElement, setFocusedElement] = useState('table');
+  
+  const searchRef = useRef(null);
+  const tableRef = useRef(null);
 
   const filteredInvoices = mockInvoices.filter(invoice => {
     const matchesSearch = invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -624,6 +800,153 @@ export function Billing() {
     const matchesStatus = !statusFilter || invoice.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  // Comprehensive keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      // Global shortcuts that work anywhere
+      if (event.key === 'F1') {
+        event.preventDefault();
+        setShowKeyboardHelp(true);
+        return;
+      }
+
+      if (event.key === 'F5') {
+        event.preventDefault();
+        window.location.reload();
+        return;
+      }
+
+      if (event.altKey && event.key === 'F4') {
+        event.preventDefault();
+        if (window.confirm('Are you sure you want to exit the application?')) {
+          window.close();
+        }
+        return;
+      }
+
+      // Ctrl shortcuts
+      if (event.ctrlKey) {
+        switch (event.key.toLowerCase()) {
+          case 'n':
+            event.preventDefault();
+            setCreateType('invoice');
+            setShowCreateModal(true);
+            break;
+          case 'p':
+            if (event.shiftKey) {
+              event.preventDefault();
+              window.print();
+            } else {
+              event.preventDefault();
+              setCreateType('purchase');
+              setShowPurchaseModal(true);
+            }
+            break;
+          case 'f':
+            event.preventDefault();
+            if (searchRef.current) {
+              searchRef.current.focus();
+              setFocusedElement('search');
+            }
+            break;
+          case 'e':
+            event.preventDefault();
+            if (selectedInvoice) {
+              handleEdit(selectedInvoice);
+            }
+            break;
+          case 's':
+            event.preventDefault();
+            console.log('Save action triggered');
+            break;
+        }
+        return;
+      }
+
+      // Navigation keys for table
+      if (focusedElement === 'table') {
+        switch (event.key) {
+          case 'ArrowUp':
+            event.preventDefault();
+            setSelectedRowIndex(prev => prev > 0 ? prev - 1 : filteredInvoices.length - 1);
+            setSelectedInvoice(filteredInvoices[selectedRowIndex > 0 ? selectedRowIndex - 1 : filteredInvoices.length - 1]);
+            break;
+          case 'ArrowDown':
+            event.preventDefault();
+            setSelectedRowIndex(prev => prev < filteredInvoices.length - 1 ? prev + 1 : 0);
+            setSelectedInvoice(filteredInvoices[selectedRowIndex < filteredInvoices.length - 1 ? selectedRowIndex + 1 : 0]);
+            break;
+          case 'Home':
+            event.preventDefault();
+            setSelectedRowIndex(0);
+            setSelectedInvoice(filteredInvoices[0]);
+            break;
+          case 'End':
+            event.preventDefault();
+            setSelectedRowIndex(filteredInvoices.length - 1);
+            setSelectedInvoice(filteredInvoices[filteredInvoices.length - 1]);
+            break;
+          case 'PageUp':
+            event.preventDefault();
+            const newUpIndex = Math.max(0, selectedRowIndex - 10);
+            setSelectedRowIndex(newUpIndex);
+            setSelectedInvoice(filteredInvoices[newUpIndex]);
+            break;
+          case 'PageDown':
+            event.preventDefault();
+            const newDownIndex = Math.min(filteredInvoices.length - 1, selectedRowIndex + 10);
+            setSelectedRowIndex(newDownIndex);
+            setSelectedInvoice(filteredInvoices[newDownIndex]);
+            break;
+          case 'Enter':
+            event.preventDefault();
+            if (selectedInvoice) {
+              handleViewDetails(selectedInvoice);
+            }
+            break;
+          case 'Delete':
+            event.preventDefault();
+            if (selectedInvoice) {
+              handleDelete(selectedInvoice);
+            }
+            break;
+        }
+      }
+
+      // Escape key handling
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (showKeyboardHelp) {
+          setShowKeyboardHelp(false);
+        } else if (showCreateModal) {
+          setShowCreateModal(false);
+        } else if (showPurchaseModal) {
+          setShowPurchaseModal(false);
+        } else {
+          // Go back or exit
+          window.history.back();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedRowIndex, selectedInvoice, filteredInvoices, focusedElement, showKeyboardHelp, showCreateModal, showPurchaseModal]);
+
+  // Set initial selected invoice
+  useEffect(() => {
+    if (filteredInvoices.length > 0 && !selectedInvoice) {
+      setSelectedInvoice(filteredInvoices[0]);
+    }
+  }, [filteredInvoices]);
+
+  // Focus table on mount
+  useEffect(() => {
+    if (tableRef.current) {
+      tableRef.current.focus();
+    }
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -645,8 +968,8 @@ export function Billing() {
   const overdueInvoices = mockInvoices.filter(inv => inv.status === 'overdue');
 
   const handleViewDetails = (invoice) => {
-    setSelectedInvoice(invoice);
-    setShowDetailView(true);
+    console.log('Viewing details for:', invoice.invoice_number);
+    alert(`Viewing details for ${invoice.invoice_number}`);
   };
 
   const handleCreateInvoice = () => {
@@ -660,9 +983,8 @@ export function Billing() {
   };
 
   const handleEdit = (invoice) => {
-    setSelectedInvoice(invoice);
-    setCreateType('invoice');
-    setShowCreateModal(true);
+    console.log('Editing invoice:', invoice.invoice_number);
+    alert(`Editing ${invoice.invoice_number}`);
   };
 
   const handleDownload = (invoice) => {
@@ -688,13 +1010,15 @@ export function Billing() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Billing & Invoices</h1>
           <p className="text-gray-600">Manage customer invoices and payments</p>
-          <p className="text-sm text-gray-500 mt-1">Press F1 for keyboard shortcuts</p>
+          <p className="text-sm text-blue-600 mt-1">
+            🎯 Full Keyboard Navigation • Press F1 for help • Use arrow keys to navigate
+          </p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={handleCreatePurchase}
             className="btn-success flex items-center space-x-2"
-            title="Create Purchase (Alt+C)"
+            title="Create Purchase (Ctrl+P)"
           >
             <ShoppingCart className="h-4 w-4" />
             <span>Create Purchase</span>
@@ -702,7 +1026,7 @@ export function Billing() {
           <button
             onClick={handleCreateInvoice}
             className="btn-primary flex items-center space-x-2"
-            title="Create Invoice (Alt+N)"
+            title="Create Invoice (Ctrl+N)"
           >
             <Plus className="h-4 w-4" />
             <span>Create Invoice</span>
@@ -780,18 +1104,21 @@ export function Billing() {
         </div>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <div className="card">
         <div className="card-content">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <input
+                ref={searchRef}
                 type="text"
-                placeholder="Search invoices..."
+                placeholder="Search invoices... (Ctrl+F to focus)"
                 className="input pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onFocus={() => setFocusedElement('search')}
+                onBlur={() => setFocusedElement('table')}
               />
             </div>
             <select
@@ -813,10 +1140,30 @@ export function Billing() {
         </div>
       </div>
 
+      {/* Navigation Instructions */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center space-x-2 text-blue-800">
+          <div className="flex items-center space-x-4 text-sm">
+            <span>🔍 <kbd className="bg-blue-100 px-1 rounded">Ctrl+F</kbd> Search</span>
+            <span>📝 <kbd className="bg-blue-100 px-1 rounded">Ctrl+N</kbd> New Invoice</span>
+            <span>🛒 <kbd className="bg-blue-100 px-1 rounded">Ctrl+P</kbd> Purchase</span>
+            <span>✏️ <kbd className="bg-blue-100 px-1 rounded">Ctrl+E</kbd> Edit</span>
+            <span>🗑️ <kbd className="bg-blue-100 px-1 rounded">Del</kbd> Delete</span>
+            <span>↕️ <kbd className="bg-blue-100 px-1 rounded">↑↓</kbd> Navigate</span>
+            <span>✅ <kbd className="bg-blue-100 px-1 rounded">Enter</kbd> Select</span>
+          </div>
+        </div>
+      </div>
+
       {/* Invoices Table */}
       <div className="card">
         <div className="card-content">
-          <div className="overflow-x-auto">
+          <div 
+            ref={tableRef}
+            tabIndex={0}
+            className="overflow-x-auto focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+            onFocus={() => setFocusedElement('table')}
+          >
             <table className="table">
               <thead className="table-header">
                 <tr className="table-row">
@@ -830,8 +1177,17 @@ export function Billing() {
                 </tr>
               </thead>
               <tbody>
-                {filteredInvoices.map((invoice) => (
-                  <tr key={invoice.id} className="table-row">
+                {filteredInvoices.map((invoice, index) => (
+                  <tr 
+                    key={invoice.id} 
+                    className={`table-row cursor-pointer ${
+                      selectedRowIndex === index ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    }`}
+                    onClick={() => {
+                      setSelectedRowIndex(index);
+                      setSelectedInvoice(invoice);
+                    }}
+                  >
                     <td className="table-cell">
                       <p className="font-medium text-primary-600">{invoice.invoice_number}</p>
                     </td>
@@ -866,22 +1222,31 @@ export function Billing() {
                       <div className="flex space-x-2">
                         <button 
                           className="p-1 text-gray-400 hover:text-primary-600" 
-                          title="View Details"
-                          onClick={() => handleViewDetails(invoice)}
+                          title="View Details (Enter)"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewDetails(invoice);
+                          }}
                         >
                           <Eye className="h-4 w-4" />
                         </button>
                         <button 
                           className="p-1 text-gray-400 hover:text-blue-600" 
-                          title="Edit"
-                          onClick={() => handleEdit(invoice)}
+                          title="Edit (Ctrl+E)"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(invoice);
+                          }}
                         >
                           <Edit className="h-4 w-4" />
                         </button>
                         <button 
                           className="p-1 text-gray-400 hover:text-success-600" 
                           title="Download"
-                          onClick={() => handleDownload(invoice)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(invoice);
+                          }}
                         >
                           <Download className="h-4 w-4" />
                         </button>
@@ -889,15 +1254,21 @@ export function Billing() {
                           <button 
                             className="p-1 text-gray-400 hover:text-primary-600" 
                             title="Send"
-                            onClick={() => handleSend(invoice)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSend(invoice);
+                            }}
                           >
                             <Send className="h-4 w-4" />
                           </button>
                         )}
                         <button 
                           className="p-1 text-gray-400 hover:text-red-600" 
-                          title="Delete"
-                          onClick={() => handleDelete(invoice)}
+                          title="Delete (Del)"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(invoice);
+                          }}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -908,6 +1279,20 @@ export function Billing() {
               </tbody>
             </table>
           </div>
+          
+          {/* Selected Invoice Info */}
+          {selectedInvoice && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Selected:</strong> {selectedInvoice.invoice_number} - {selectedInvoice.customer.name} 
+                <span className="ml-4">
+                  Press <kbd className="bg-blue-100 px-1 rounded">Enter</kbd> to view details, 
+                  <kbd className="bg-blue-100 px-1 rounded ml-1">Ctrl+E</kbd> to edit, 
+                  <kbd className="bg-blue-100 px-1 rounded ml-1">Del</kbd> to delete
+                </span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
@@ -925,6 +1310,7 @@ export function Billing() {
       <KeyboardShortcutsHelp 
         isOpen={showKeyboardHelp} 
         onClose={() => setShowKeyboardHelp(false)} 
+        focusedElement={focusedElement}
       />
     </div>
   );
