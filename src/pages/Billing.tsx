@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Plus, Search, Filter, FileText, Eye, Download, Send, Edit, Trash2, ShoppingCart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Search, Filter, FileText, Eye, Download, Send, Edit, Trash2, ShoppingCart, ArrowLeft, Save, Printer, X } from 'lucide-react';
 
 const mockInvoices = [
   {
@@ -87,42 +87,536 @@ const mockInvoices = [
     total_qty: 63,
     total_trade_disc: 30.71
   },
-  {
-    id: '2',
-    invoice_number: 'INV-2024-002',
-    customer: {
-      id: '2',
-      name: 'Health Plus Pharmacy',
-      address: '456 Oak Ave, Midtown, NY 10002',
-      mobile: '9876543210',
-      email: 'billing@healthplus.com',
-      phone: '+1-555-0124',
-    },
-    total_amount: 1875.50,
-    tax_amount: 187.55,
-    discount_amount: 0,
-    gross_amount: 1687.95,
-    status: 'sent',
-    due_date: '2024-02-20',
-    created_at: '2024-01-20',
-    entry_no: 'E002',
-    ref_no: 'R002',
-    excise: 'Not Applicable',
-    consumption_days: 5,
-    order_frequency: 'Weekly',
-    items: [],
-    total_items: 2,
-    total_qty: 45,
-    total_trade_disc: 15.25
-  },
 ];
+
+// Keyboard shortcuts help modal
+const KeyboardShortcutsHelp = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold">Keyboard Shortcuts</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <h4 className="font-medium mb-2">Navigation</h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>Back</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + B</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Exit</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + X</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Help</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">F1</kbd>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 className="font-medium mb-2">Actions</h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span>New Invoice</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + N</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Save</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + S</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Print</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + P</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Edit</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + E</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Delete</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + D</kbd>
+              </div>
+              <div className="flex justify-between">
+                <span>Create Purchase</span>
+                <kbd className="bg-gray-100 px-2 py-1 rounded">Alt + C</kbd>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Create Bill/Purchase Modal
+const CreateBillModal = ({ isOpen, onClose, type = 'invoice' }) => {
+  const [formData, setFormData] = useState({
+    customerName: '',
+    address: '',
+    mobile: '',
+    entryNo: '',
+    refNo: '',
+    excise: 'Not Applicable',
+    consumptionDays: '',
+    orderFrequency: '',
+    items: []
+  });
+
+  const [currentItem, setCurrentItem] = useState({
+    product: '',
+    batch: '',
+    expiryDate: '',
+    mrp: '',
+    retailPrice: '',
+    tradePrice: '',
+    qty: '',
+    qtyUnit: 'TAB',
+    tradeDisc: '',
+    tax: 'SG2'
+  });
+
+  const [margin, setMargin] = useState(0);
+
+  useEffect(() => {
+    if (currentItem.retailPrice && currentItem.tradePrice) {
+      const retail = parseFloat(currentItem.retailPrice) || 0;
+      const trade = parseFloat(currentItem.tradePrice) || 0;
+      const calculatedMargin = trade > 0 ? ((retail - trade) / trade * 100) : 0;
+      setMargin(calculatedMargin.toFixed(2));
+    }
+  }, [currentItem.retailPrice, currentItem.tradePrice]);
+
+  const handleAddItem = () => {
+    if (currentItem.product && currentItem.qty) {
+      const qty = parseFloat(currentItem.qty) || 0;
+      const rate = parseFloat(currentItem.tradePrice) || 0;
+      const discount = parseFloat(currentItem.tradeDisc) || 0;
+      const finalAmount = (qty * rate) - discount;
+
+      const newItem = {
+        ...currentItem,
+        id: Date.now().toString(),
+        sr_no: formData.items.length + 1,
+        final_amount: finalAmount
+      };
+
+      setFormData(prev => ({
+        ...prev,
+        items: [...prev.items, newItem]
+      }));
+
+      setCurrentItem({
+        product: '',
+        batch: '',
+        expiryDate: '',
+        mrp: '',
+        retailPrice: '',
+        tradePrice: '',
+        qty: '',
+        qtyUnit: 'TAB',
+        tradeDisc: '',
+        tax: 'SG2'
+      });
+    }
+  };
+
+  const handleSave = () => {
+    console.log('Saving:', type, formData);
+    alert(`${type === 'invoice' ? 'Invoice' : 'Purchase'} saved successfully!`);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg w-full max-w-6xl mx-4 max-h-screen overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">
+              Create {type === 'invoice' ? 'Invoice' : 'Purchase Order'}
+            </h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Customer Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Name *</label>
+                  <input
+                    type="text"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
+                    className="input"
+                    placeholder="Customer name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Refer By</label>
+                  <input type="text" className="input" placeholder="Reference" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
+                  <textarea
+                    value={formData.address}
+                    onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                    className="input h-20 resize-none"
+                    placeholder="Customer address"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Mobile No.</label>
+                    <input
+                      type="text"
+                      value={formData.mobile}
+                      onChange={(e) => setFormData(prev => ({ ...prev, mobile: e.target.value }))}
+                      className="input"
+                      placeholder="Mobile number"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">Balance</label>
+                    <input type="text" className="input" placeholder="0.00" />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Entry No.</label>
+                <input
+                  type="text"
+                  value={formData.entryNo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, entryNo: e.target.value }))}
+                  className="input"
+                  placeholder="Entry number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Ref. No.</label>
+                <input
+                  type="text"
+                  value={formData.refNo}
+                  onChange={(e) => setFormData(prev => ({ ...prev, refNo: e.target.value }))}
+                  className="input"
+                  placeholder="Reference number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Excise</label>
+                <input
+                  type="text"
+                  value={formData.excise}
+                  onChange={(e) => setFormData(prev => ({ ...prev, excise: e.target.value }))}
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
+                <input type="date" className="input" defaultValue={new Date().toISOString().split('T')[0]} />
+              </div>
+            </div>
+          </div>
+
+          {/* Item Entry Section */}
+          <div className="border-t pt-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Add Items</h3>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Product *</label>
+                <input
+                  type="text"
+                  value={currentItem.product}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, product: e.target.value }))}
+                  className="input"
+                  placeholder="Product name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Batch</label>
+                <input
+                  type="text"
+                  value={currentItem.batch}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, batch: e.target.value }))}
+                  className="input"
+                  placeholder="Batch number"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Expiry Date</label>
+                <input
+                  type="text"
+                  value={currentItem.expiryDate}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, expiryDate: e.target.value }))}
+                  className="input"
+                  placeholder="MM/YY"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">MRP</label>
+                <input
+                  type="number"
+                  value={currentItem.mrp}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, mrp: e.target.value }))}
+                  className="input"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            {/* Pricing Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-4">
+              {/* Retail Price Section */}
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-800 mb-2">Retail Price Section</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Retail Price</label>
+                  <input
+                    type="number"
+                    value={currentItem.retailPrice}
+                    onChange={(e) => setCurrentItem(prev => ({ ...prev, retailPrice: e.target.value }))}
+                    className="input"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Trade Price Section */}
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-800 mb-2">Trade Price Section</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Trade Price</label>
+                  <input
+                    type="number"
+                    value={currentItem.tradePrice}
+                    onChange={(e) => setCurrentItem(prev => ({ ...prev, tradePrice: e.target.value }))}
+                    className="input"
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Margin Section */}
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h4 className="font-medium text-yellow-800 mb-2">Margin Section</h4>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Margin %</label>
+                  <input
+                    type="text"
+                    value={margin}
+                    className="input bg-gray-100"
+                    readOnly
+                    placeholder="Auto-calculated"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Quantity *</label>
+                <input
+                  type="number"
+                  value={currentItem.qty}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, qty: e.target.value }))}
+                  className="input"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Unit</label>
+                <select
+                  value={currentItem.qtyUnit}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, qtyUnit: e.target.value }))}
+                  className="input"
+                >
+                  <option value="TAB">TAB</option>
+                  <option value="CAP">CAP</option>
+                  <option value="BOT">BOT</option>
+                  <option value="INJ">INJ</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Trade Disc.</label>
+                <input
+                  type="number"
+                  value={currentItem.tradeDisc}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, tradeDisc: e.target.value }))}
+                  className="input"
+                  placeholder="0.00"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Tax</label>
+                <select
+                  value={currentItem.tax}
+                  onChange={(e) => setCurrentItem(prev => ({ ...prev, tax: e.target.value }))}
+                  className="input"
+                >
+                  <option value="SG2">SG2</option>
+                  <option value="SG1">SG1</option>
+                  <option value="EXEMPT">EXEMPT</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button
+                  onClick={handleAddItem}
+                  className="btn-primary w-full"
+                >
+                  Add Item
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Items Table */}
+          {formData.items.length > 0 && (
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-4">Items Added</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Sr No</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Product</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Batch</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Qty</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Trade Price</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Final Amount</th>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {formData.items.map((item, index) => (
+                      <tr key={item.id}>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.sr_no}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.product}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.batch}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.qty}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.tradePrice}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">{item.final_amount.toFixed(2)}</td>
+                        <td className="border border-gray-300 px-2 py-2 text-sm">
+                          <button
+                            onClick={() => setFormData(prev => ({
+                              ...prev,
+                              items: prev.items.filter(i => i.id !== item.id)
+                            }))}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex justify-center space-x-4 pt-6 border-t">
+            <button onClick={() => setFormData({ customerName: '', address: '', mobile: '', entryNo: '', refNo: '', excise: 'Not Applicable', consumptionDays: '', orderFrequency: '', items: [] })} className="btn-secondary">
+              New (Alt+N)
+            </button>
+            <button onClick={handleSave} className="btn-primary">
+              Save (Alt+S)
+            </button>
+            <button onClick={() => window.print()} className="btn-secondary">
+              Print (Alt+P)
+            </button>
+            <button onClick={onClose} className="btn-secondary">
+              Cancel (Alt+C)
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export function Billing() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [showDetailView, setShowDetailView] = useState(false);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [createType, setCreateType] = useState('invoice');
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.altKey) {
+        switch (event.key.toLowerCase()) {
+          case 'n':
+            event.preventDefault();
+            setCreateType('invoice');
+            setShowCreateModal(true);
+            break;
+          case 'c':
+            event.preventDefault();
+            setCreateType('purchase');
+            setShowPurchaseModal(true);
+            break;
+          case 'b':
+            event.preventDefault();
+            if (showDetailView) {
+              setShowDetailView(false);
+            } else {
+              window.history.back();
+            }
+            break;
+          case 'x':
+            event.preventDefault();
+            if (window.confirm('Are you sure you want to exit?')) {
+              window.close();
+            }
+            break;
+          case 'e':
+            event.preventDefault();
+            if (selectedInvoice) {
+              setShowDetailView(true);
+            }
+            break;
+          case 's':
+            event.preventDefault();
+            console.log('Save action triggered');
+            break;
+          case 'p':
+            event.preventDefault();
+            window.print();
+            break;
+          case 'd':
+            event.preventDefault();
+            if (selectedInvoice && window.confirm('Are you sure you want to delete this invoice?')) {
+              console.log('Delete invoice:', selectedInvoice.id);
+            }
+            break;
+        }
+      } else if (event.key === 'F1') {
+        event.preventDefault();
+        setShowKeyboardHelp(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showDetailView, selectedInvoice]);
 
   const filteredInvoices = mockInvoices.filter(invoice => {
     const matchesSearch = invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -131,7 +625,7 @@ export function Billing() {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'paid':
         return 'bg-success-50 text-success-700 border-success-200';
@@ -155,300 +649,38 @@ export function Billing() {
     setShowDetailView(true);
   };
 
-  const handleCreatePurchase = () => {
+  const handleCreateInvoice = () => {
+    setCreateType('invoice');
     setShowCreateModal(true);
   };
 
-  if (showDetailView && selectedInvoice) {
-    return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setShowDetailView(false)}
-              className="btn-secondary"
-            >
-              ← Back to List
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Invoice Details</h1>
-              <p className="text-gray-600">{selectedInvoice.invoice_number}</p>
-            </div>
-          </div>
-          <div className="flex space-x-3">
-            <button className="btn-secondary">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit
-            </button>
-            <button className="btn-secondary">
-              <Download className="h-4 w-4 mr-2" />
-              Print
-            </button>
-            <button className="btn-primary" onClick={handleCreatePurchase}>
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Create Purchase
-            </button>
-          </div>
-        </div>
+  const handleCreatePurchase = () => {
+    setCreateType('purchase');
+    setShowPurchaseModal(true);
+  };
 
-        {/* Invoice Detail View */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          {/* Customer Information */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-            <div className="lg:col-span-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Name</label>
-                  <input
-                    type="text"
-                    value={selectedInvoice.customer.name}
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Refer By</label>
-                  <input
-                    type="text"
-                    value=""
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Address</label>
-                  <textarea
-                    value={`${selectedInvoice.customer.address}\nMobile No: ${selectedInvoice.customer.mobile}`}
-                    className="input h-20 resize-none"
-                    readOnly
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Cr. Days</label>
-                    <input type="text" value="0" className="input" readOnly />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Balance</label>
-                    <input type="text" value="150.00 Dr" className="input" readOnly />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Price/Disc. Ref.</label>
-                  <input type="text" value="" className="input" readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Checked By</label>
-                  <input type="text" value="" className="input" readOnly />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Consumption Days for Order</label>
-                  <input
-                    type="text"
-                    value={selectedInvoice.consumption_days}
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Order Frequency</label>
-                  <input
-                    type="text"
-                    value={selectedInvoice.order_frequency}
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Days</label>
-                  <select className="input" disabled>
-                    <option>Days</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Entry No.</label>
-                <input
-                  type="text"
-                  value={selectedInvoice.entry_no}
-                  className="input"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Ref. No.</label>
-                <input
-                  type="text"
-                  value={selectedInvoice.ref_no}
-                  className="input"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Excise</label>
-                <input
-                  type="text"
-                  value={selectedInvoice.excise}
-                  className="input"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
-                <input
-                  type="text"
-                  value="20/09/2021"
-                  className="input"
-                  readOnly
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-600 mb-1">Date</label>
-                <input
-                  type="text"
-                  value="20/09/2021"
-                  className="input"
-                  readOnly
-                />
-              </div>
-            </div>
-          </div>
+  const handleEdit = (invoice) => {
+    setSelectedInvoice(invoice);
+    setCreateType('invoice');
+    setShowCreateModal(true);
+  };
 
-          {/* Items Table */}
-          <div className="overflow-x-auto mb-6">
-            <table className="w-full border-collapse border border-gray-300">
-              <thead>
-                <tr className="bg-gray-50">
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Sr No</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Product</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Batch</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Expiry Date</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">MRP</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Rate</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Qty</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Qty Unit</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Trade Disc.</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Tax</th>
-                  <th className="border border-gray-300 px-2 py-2 text-left text-xs font-medium text-gray-700">Final Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedInvoice.items.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50">
-                    <td className="border border-gray-300 px-2 py-2 text-sm">{item.sr_no}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm">{item.product}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm">{item.batch}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm">{item.expiry_date}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm text-right">{item.mrp.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm text-right">{item.rate.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm text-right">{item.qty.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm">{item.qty_unit}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm text-right">{item.trade_disc.toFixed(2)}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm">{item.tax}</td>
-                    <td className="border border-gray-300 px-2 py-2 text-sm text-right font-medium">{item.final_amount.toFixed(2)}</td>
-                  </tr>
-                ))}
-                {/* Summary Row */}
-                <tr className="bg-gray-100 font-medium">
-                  <td className="border border-gray-300 px-2 py-2 text-sm" colSpan="6">Total Items: {selectedInvoice.total_items}</td>
-                  <td className="border border-gray-300 px-2 py-2 text-sm text-right">{selectedInvoice.total_qty}</td>
-                  <td className="border border-gray-300 px-2 py-2 text-sm"></td>
-                  <td className="border border-gray-300 px-2 py-2 text-sm text-right">{selectedInvoice.total_trade_disc.toFixed(2)}</td>
-                  <td className="border border-gray-300 px-2 py-2 text-sm"></td>
-                  <td className="border border-gray-300 px-2 py-2 text-sm text-right font-bold">{selectedInvoice.total_amount.toFixed(2)}</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+  const handleDownload = (invoice) => {
+    console.log('Downloading invoice:', invoice.invoice_number);
+    alert(`Downloading ${invoice.invoice_number}`);
+  };
 
-          {/* Financial Summary */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Gross</label>
-                  <input
-                    type="text"
-                    value={selectedInvoice.gross_amount.toFixed(2)}
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Cash Disc.</label>
-                  <input
-                    type="text"
-                    value="0.00"
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Round off</label>
-                  <input
-                    type="text"
-                    value="0.00"
-                    className="input"
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Rs.</label>
-                  <input
-                    type="text"
-                    value="0.00"
-                    className="input"
-                    readOnly
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="text-right space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Discounts:</span>
-                  <span className="text-lg font-bold text-blue-600">{selectedInvoice.discount_amount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Tax:</span>
-                  <span className="text-lg font-bold text-gray-900">{selectedInvoice.tax_amount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-medium text-gray-600">Add/Less:</span>
-                  <span className="text-lg font-bold text-gray-900">0</span>
-                </div>
-                <div className="border-t pt-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-gray-900">NET:</span>
-                    <span className="text-2xl font-bold text-blue-600">{selectedInvoice.total_amount.toFixed(2)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+  const handleSend = (invoice) => {
+    console.log('Sending invoice:', invoice.invoice_number);
+    alert(`Invoice ${invoice.invoice_number} sent successfully!`);
+  };
 
-          {/* Action Buttons */}
-          <div className="flex justify-center space-x-4 mt-6 pt-6 border-t">
-            <button className="btn-secondary">New: Alt+N</button>
-            <button className="btn-secondary">Save: Alt+S</button>
-            <button className="btn-secondary">Print: Alt+P</button>
-            <button className="btn-secondary">Draft: Alt+R</button>
-            <button className="btn-secondary">Delete: Alt+D</button>
-            <button className="btn-secondary">Cancel: Alt+C</button>
-            <button className="btn-secondary">Cancel Changes: Alt+A</button>
-            <button className="btn-secondary">Browse: Alt+E</button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const handleDelete = (invoice) => {
+    if (window.confirm(`Are you sure you want to delete ${invoice.invoice_number}?`)) {
+      console.log('Deleting invoice:', invoice.id);
+      alert(`Invoice ${invoice.invoice_number} deleted successfully!`);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -456,21 +688,31 @@ export function Billing() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Billing & Invoices</h1>
           <p className="text-gray-600">Manage customer invoices and payments</p>
+          <p className="text-sm text-gray-500 mt-1">Press F1 for keyboard shortcuts</p>
         </div>
         <div className="flex space-x-3">
           <button
             onClick={handleCreatePurchase}
-            className="btn-success"
+            className="btn-success flex items-center space-x-2"
+            title="Create Purchase (Alt+C)"
           >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Create Purchase
+            <ShoppingCart className="h-4 w-4" />
+            <span>Create Purchase</span>
           </button>
           <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn-primary"
+            onClick={handleCreateInvoice}
+            className="btn-primary flex items-center space-x-2"
+            title="Create Invoice (Alt+N)"
           >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Invoice
+            <Plus className="h-4 w-4" />
+            <span>Create Invoice</span>
+          </button>
+          <button
+            onClick={() => setShowKeyboardHelp(true)}
+            className="btn-secondary flex items-center space-x-2"
+            title="Keyboard Shortcuts (F1)"
+          >
+            <span>Help (F1)</span>
           </button>
         </div>
       </div>
@@ -563,9 +805,9 @@ export function Billing() {
               <option value="paid">Paid</option>
               <option value="overdue">Overdue</option>
             </select>
-            <button className="btn-secondary">
-              <Filter className="h-4 w-4 mr-2" />
-              More Filters
+            <button className="btn-secondary flex items-center space-x-2">
+              <Filter className="h-4 w-4" />
+              <span>More Filters</span>
             </button>
           </div>
         </div>
@@ -629,14 +871,36 @@ export function Billing() {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        <button className="p-1 text-gray-400 hover:text-success-600" title="Download">
+                        <button 
+                          className="p-1 text-gray-400 hover:text-blue-600" 
+                          title="Edit"
+                          onClick={() => handleEdit(invoice)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </button>
+                        <button 
+                          className="p-1 text-gray-400 hover:text-success-600" 
+                          title="Download"
+                          onClick={() => handleDownload(invoice)}
+                        >
                           <Download className="h-4 w-4" />
                         </button>
                         {invoice.status !== 'paid' && (
-                          <button className="p-1 text-gray-400 hover:text-primary-600" title="Send">
+                          <button 
+                            className="p-1 text-gray-400 hover:text-primary-600" 
+                            title="Send"
+                            onClick={() => handleSend(invoice)}
+                          >
                             <Send className="h-4 w-4" />
                           </button>
                         )}
+                        <button 
+                          className="p-1 text-gray-400 hover:text-red-600" 
+                          title="Delete"
+                          onClick={() => handleDelete(invoice)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -646,6 +910,22 @@ export function Billing() {
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <CreateBillModal 
+        isOpen={showCreateModal} 
+        onClose={() => setShowCreateModal(false)} 
+        type="invoice"
+      />
+      <CreateBillModal 
+        isOpen={showPurchaseModal} 
+        onClose={() => setShowPurchaseModal(false)} 
+        type="purchase"
+      />
+      <KeyboardShortcutsHelp 
+        isOpen={showKeyboardHelp} 
+        onClose={() => setShowKeyboardHelp(false)} 
+      />
     </div>
   );
 }
