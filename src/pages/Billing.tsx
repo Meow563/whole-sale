@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, Download, Send, FileText, DollarSign, Users, TrendingUp } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, Download, Send, FileText, DollarSign, Users, TrendingUp, ShoppingCart } from 'lucide-react';
 
 interface Invoice {
   id: string;
@@ -93,225 +93,198 @@ export function Billing() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentInvoice, setCurrentInvoice] = useState<Invoice | null>(null);
 
-  // New invoice form state
-  const [newInvoice, setNewInvoice] = useState({
-    customer_name: '',
-    customer_address: '',
-    customer_mobile: '',
-    items: [] as InvoiceItem[]
-  });
-
-  const [newItem, setNewItem] = useState({
-    product_name: '',
-    batch: '',
-    expiry_date: '',
-    mrp: 0,
-    trade_price: 0,
-    quantity: 1,
-    trade_discount: 0,
-    tax: 0
-  });
-
   const filteredInvoices = invoices.filter(invoice =>
     invoice.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     invoice.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Global keyboard event handler
-  const handleGlobalKeyDown = useCallback((e: KeyboardEvent) => {
-    // Handle modal-specific shortcuts
-    if (showCreateModal || showViewModal) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
+  // Keyboard event handler
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    console.log('Key pressed:', event.key, 'Ctrl:', event.ctrlKey, 'Alt:', event.altKey);
+    
+    // Prevent default for our handled keys
+    const handledKeys = ['ArrowUp', 'ArrowDown', 'Enter', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'F1', 'F5'];
+    const handledCtrlKeys = ['n', 'p', 'f', 'e', 's'];
+    
+    if (handledKeys.includes(event.key) || (event.ctrlKey && handledCtrlKeys.includes(event.key.toLowerCase()))) {
+      event.preventDefault();
+    }
+
+    // Handle Escape key
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      if (showCreateModal || showViewModal) {
         setShowCreateModal(false);
         setShowViewModal(false);
         setCurrentInvoice(null);
-      }
-      if (showCreateModal && e.ctrlKey && e.key === 's') {
-        e.preventDefault();
-        saveInvoice();
+        console.log('Modal closed with Escape');
       }
       return;
     }
 
-    // Global shortcuts
-    if (e.ctrlKey) {
-      switch (e.key) {
-        case 'n':
-          e.preventDefault();
-          setShowCreateModal(true);
-          break;
-        case 'p':
-          e.preventDefault();
-          console.log('Create Purchase Order');
-          break;
-        case 'f':
-          e.preventDefault();
-          const searchInput = document.getElementById('search-input');
-          if (searchInput) {
-            searchInput.focus();
-          }
-          break;
-        case 'e':
-          e.preventDefault();
-          if (filteredInvoices[selectedIndex]) {
-            editInvoice(filteredInvoices[selectedIndex].id);
-          }
-          break;
-        case 's':
-          e.preventDefault();
-          console.log('Save current form');
-          break;
-      }
+    // Don't handle other keys if modal is open
+    if (showCreateModal || showViewModal) {
       return;
     }
 
-    // Function keys
-    if (e.key === 'F1') {
-      e.preventDefault();
-      alert('Keyboard Shortcuts:\n\nNavigation:\n↑↓ - Navigate rows\nEnter - View invoice\nDelete - Remove invoice\n\nShortcuts:\nCtrl+N - New invoice\nCtrl+P - Purchase order\nCtrl+F - Search\nCtrl+E - Edit\nCtrl+S - Save\nEscape - Cancel');
-      return;
-    }
-
-    if (e.key === 'F5') {
-      e.preventDefault();
-      window.location.reload();
-      return;
-    }
-
-    // Navigation keys
-    switch (e.key) {
+    // Handle navigation keys
+    switch (event.key) {
       case 'ArrowUp':
-        e.preventDefault();
-        setSelectedIndex(prev => Math.max(0, prev - 1));
+        setSelectedIndex(prev => {
+          const newIndex = Math.max(0, prev - 1);
+          console.log('Arrow Up - New index:', newIndex);
+          return newIndex;
+        });
         break;
+        
       case 'ArrowDown':
-        e.preventDefault();
-        setSelectedIndex(prev => Math.min(filteredInvoices.length - 1, prev + 1));
+        setSelectedIndex(prev => {
+          const newIndex = Math.min(filteredInvoices.length - 1, prev + 1);
+          console.log('Arrow Down - New index:', newIndex);
+          return newIndex;
+        });
         break;
-      case 'PageUp':
-        e.preventDefault();
-        setSelectedIndex(prev => Math.max(0, prev - 10));
-        break;
-      case 'PageDown':
-        e.preventDefault();
-        setSelectedIndex(prev => Math.min(filteredInvoices.length - 1, prev + 10));
-        break;
+        
       case 'Home':
-        e.preventDefault();
         setSelectedIndex(0);
+        console.log('Home - Index set to 0');
         break;
+        
       case 'End':
-        e.preventDefault();
         setSelectedIndex(filteredInvoices.length - 1);
+        console.log('End - Index set to:', filteredInvoices.length - 1);
         break;
+        
+      case 'PageUp':
+        setSelectedIndex(prev => Math.max(0, prev - 10));
+        console.log('Page Up');
+        break;
+        
+      case 'PageDown':
+        setSelectedIndex(prev => Math.min(filteredInvoices.length - 1, prev + 10));
+        console.log('Page Down');
+        break;
+        
       case 'Enter':
-        e.preventDefault();
         if (filteredInvoices[selectedIndex]) {
           viewInvoice(filteredInvoices[selectedIndex]);
+          console.log('Enter - Viewing invoice:', filteredInvoices[selectedIndex].invoice_number);
         }
         break;
+        
       case 'Delete':
-        e.preventDefault();
         if (filteredInvoices[selectedIndex]) {
           deleteInvoice(filteredInvoices[selectedIndex].id);
+          console.log('Delete - Deleting invoice:', filteredInvoices[selectedIndex].invoice_number);
         }
         break;
+        
+      case 'F1':
+        showHelp();
+        console.log('F1 - Showing help');
+        break;
+        
+      case 'F5':
+        window.location.reload();
+        console.log('F5 - Refreshing page');
+        break;
+    }
+
+    // Handle Ctrl combinations
+    if (event.ctrlKey) {
+      switch (event.key.toLowerCase()) {
+        case 'n':
+          setShowCreateModal(true);
+          console.log('Ctrl+N - Creating new invoice');
+          break;
+          
+        case 'p':
+          createPurchaseOrder();
+          console.log('Ctrl+P - Creating purchase order');
+          break;
+          
+        case 'f':
+          const searchInput = document.getElementById('search-input') as HTMLInputElement;
+          if (searchInput) {
+            searchInput.focus();
+            console.log('Ctrl+F - Focusing search');
+          }
+          break;
+          
+        case 'e':
+          if (filteredInvoices[selectedIndex]) {
+            editInvoice(filteredInvoices[selectedIndex].id);
+            console.log('Ctrl+E - Editing invoice');
+          }
+          break;
+          
+        case 's':
+          saveCurrentForm();
+          console.log('Ctrl+S - Saving form');
+          break;
+      }
     }
   }, [selectedIndex, filteredInvoices, showCreateModal, showViewModal]);
 
+  // Add event listener
   useEffect(() => {
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [handleGlobalKeyDown]);
+    console.log('Adding keyboard event listener');
+    document.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      console.log('Removing keyboard event listener');
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
-  // Ensure selected index is valid when filtered invoices change
-  useEffect(() => {
-    if (selectedIndex >= filteredInvoices.length) {
-      setSelectedIndex(Math.max(0, filteredInvoices.length - 1));
-    }
-  }, [filteredInvoices.length, selectedIndex]);
-
+  // Action functions
   const viewInvoice = (invoice: Invoice) => {
     setCurrentInvoice(invoice);
     setShowViewModal(true);
+    alert(`Viewing invoice: ${invoice.invoice_number}`);
   };
 
   const editInvoice = (id: string) => {
     const invoice = invoices.find(inv => inv.id === id);
     if (invoice) {
       alert(`Editing invoice: ${invoice.invoice_number}`);
-      console.log('Edit invoice:', invoice);
     }
   };
 
   const deleteInvoice = (id: string) => {
     const invoice = invoices.find(inv => inv.id === id);
-    if (invoice && confirm(`Are you sure you want to delete invoice ${invoice.invoice_number}?`)) {
-      alert(`Invoice ${invoice.invoice_number} deleted successfully!`);
-      console.log('Delete invoice:', invoice);
+    if (invoice && confirm(`Delete invoice ${invoice.invoice_number}?`)) {
+      alert(`Invoice ${invoice.invoice_number} deleted!`);
     }
   };
 
-  const calculateMargin = (mrp: number, tradePrice: number) => {
-    if (tradePrice === 0) return 0;
-    return ((mrp - tradePrice) / tradePrice) * 100;
+  const createPurchaseOrder = () => {
+    alert('Creating new purchase order...');
   };
 
-  const addItemToInvoice = () => {
-    const margin = calculateMargin(newItem.mrp, newItem.trade_price);
-    const finalAmount = (newItem.trade_price * newItem.quantity) - newItem.trade_discount + newItem.tax;
-    
-    const item: InvoiceItem = {
-      id: Date.now().toString(),
-      product_name: newItem.product_name,
-      batch: newItem.batch,
-      expiry_date: newItem.expiry_date,
-      mrp: newItem.mrp,
-      rate: newItem.trade_price,
-      quantity: newItem.quantity,
-      trade_discount: newItem.trade_discount,
-      tax: newItem.tax,
-      final_amount: finalAmount
-    };
-
-    setNewInvoice(prev => ({
-      ...prev,
-      items: [...prev.items, item]
-    }));
-
-    // Reset form
-    setNewItem({
-      product_name: '',
-      batch: '',
-      expiry_date: '',
-      mrp: 0,
-      trade_price: 0,
-      quantity: 1,
-      trade_discount: 0,
-      tax: 0
-    });
+  const saveCurrentForm = () => {
+    alert('Saving current form...');
   };
 
-  const saveInvoice = () => {
-    if (!newInvoice.customer_name.trim()) {
-      alert('Please enter customer name');
-      return;
-    }
-    if (newInvoice.items.length === 0) {
-      alert('Please add at least one item');
-      return;
-    }
-    
-    alert('Invoice saved successfully!');
-    console.log('Saving invoice:', newInvoice);
-    setShowCreateModal(false);
-    setNewInvoice({
-      customer_name: '',
-      customer_address: '',
-      customer_mobile: '',
-      items: []
-    });
+  const showHelp = () => {
+    alert(`Keyboard Shortcuts:
+
+Navigation:
+↑↓ - Navigate rows
+Home/End - First/Last row
+Page Up/Down - Jump 10 rows
+Enter - View invoice
+Delete - Delete invoice
+
+Actions:
+Ctrl+N - New invoice
+Ctrl+P - Purchase order
+Ctrl+F - Search
+Ctrl+E - Edit
+Ctrl+S - Save
+F1 - This help
+F5 - Refresh
+Escape - Cancel`);
   };
 
   const getStatusColor = (status: string) => {
@@ -330,29 +303,34 @@ export function Billing() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Billing & Invoicing</h1>
-          <p className="text-gray-600">Manage invoices and billing operations</p>
+          <p className="text-gray-600">Use keyboard shortcuts for navigation</p>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn-primary"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Create Invoice (Ctrl+N)
-        </button>
+        <div className="flex space-x-3">
+          <button
+            onClick={createPurchaseOrder}
+            className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            <span>Create Purchase (Ctrl+P)</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn-primary"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Create Invoice (Ctrl+N)
+          </button>
+        </div>
       </div>
 
       {/* Keyboard Instructions */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="font-medium text-blue-900 mb-2">Keyboard Navigation:</h3>
+        <h3 className="font-medium text-blue-900 mb-2">🎯 Keyboard Navigation Active:</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-blue-800">
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">↑↓</kbd> Navigate rows</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Enter</kbd> View invoice</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Ctrl+N</kbd> New invoice</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Ctrl+F</kbd> Search</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Delete</kbd> Remove invoice</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Ctrl+E</kbd> Edit invoice</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Home/End</kbd> First/Last</div>
-          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">F1</kbd> Help</div>
+          <div><kbd className="px-2 py-1 bg-blue-200 rounded">↑↓</kbd> Navigate</div>
+          <div><kbd className="px-2 py-1 bg-blue-200 rounded">Enter</kbd> View</div>
+          <div><kbd className="px-2 py-1 bg-blue-200 rounded">Ctrl+N</kbd> New</div>
+          <div><kbd className="px-2 py-1 bg-blue-200 rounded">F1</kbd> Help</div>
         </div>
       </div>
 
@@ -421,7 +399,7 @@ export function Billing() {
             <input
               id="search-input"
               type="text"
-              placeholder="Search invoices... (Ctrl+F)"
+              placeholder="Search invoices... (Ctrl+F to focus)"
               className="input pl-10"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -449,8 +427,10 @@ export function Billing() {
                 {filteredInvoices.map((invoice, index) => (
                   <tr
                     key={invoice.id}
-                    className={`table-row cursor-pointer ${
-                      index === selectedIndex ? 'bg-blue-50 border-l-4 border-blue-500' : ''
+                    className={`table-row cursor-pointer transition-colors ${
+                      index === selectedIndex 
+                        ? 'bg-blue-100 border-l-4 border-blue-600 shadow-sm' 
+                        : 'hover:bg-gray-50'
                     }`}
                     onClick={() => setSelectedIndex(index)}
                   >
@@ -513,8 +493,9 @@ export function Billing() {
               </tbody>
             </table>
           </div>
-          <div className="mt-4 text-sm text-gray-600">
-            Selected: {selectedIndex + 1} of {filteredInvoices.length} invoices
+          <div className="mt-4 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+            <strong>Selected:</strong> Row {selectedIndex + 1} of {filteredInvoices.length} | 
+            <strong> Current:</strong> {filteredInvoices[selectedIndex]?.invoice_number || 'None'}
           </div>
         </div>
       </div>
@@ -522,9 +503,10 @@ export function Billing() {
       {/* Create Invoice Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-gray-900">Create New Invoice</h2>
+              <p className="text-sm text-gray-600">Press Escape to cancel</p>
             </div>
             
             <div className="p-6 space-y-6">
@@ -532,239 +514,52 @@ export function Billing() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
-                  <input
-                    autoFocus
-                    type="text"
-                    className="input"
-                    value={newInvoice.customer_name}
-                    onChange={(e) => setNewInvoice(prev => ({ ...prev, customer_name: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const nextInput = e.currentTarget.parentElement?.parentElement?.children[1]?.querySelector('input');
-                        if (nextInput) (nextInput as HTMLInputElement).focus();
-                      }
-                    }}
-                  />
+                  <input type="text" className="input" placeholder="Enter customer name" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={newInvoice.customer_address}
-                    onChange={(e) => setNewInvoice(prev => ({ ...prev, customer_address: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const nextInput = e.currentTarget.parentElement?.parentElement?.children[2]?.querySelector('input');
-                        if (nextInput) (nextInput as HTMLInputElement).focus();
-                      }
-                    }}
-                  />
+                  <input type="text" className="input" placeholder="Enter address" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mobile</label>
-                  <input
-                    type="text"
-                    className="input"
-                    value={newInvoice.customer_mobile}
-                    onChange={(e) => setNewInvoice(prev => ({ ...prev, customer_mobile: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        const productInput = document.querySelector('input[placeholder="Enter product name"]');
-                        if (productInput) (productInput as HTMLInputElement).focus();
-                      }
-                    }}
-                  />
+                  <input type="text" className="input" placeholder="Enter mobile number" />
                 </div>
               </div>
 
-              {/* Add Item Section */}
-              <div className="border border-gray-200 rounded-lg p-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Add Item</h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
-                    <input
-                      type="text"
-                      placeholder="Enter product name"
-                      className="input"
-                      value={newItem.product_name}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, product_name: e.target.value }))}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const batchInput = e.currentTarget.parentElement?.parentElement?.children[1]?.querySelector('input');
-                          if (batchInput) (batchInput as HTMLInputElement).focus();
-                        }
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Batch</label>
-                    <input
-                      type="text"
-                      className="input"
-                      value={newItem.batch}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, batch: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
-                    <input
-                      type="text"
-                      className="input"
-                      placeholder="MM/YY"
-                      value={newItem.expiry_date}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, expiry_date: e.target.value }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
-                    <input
-                      type="number"
-                      className="input"
-                      value={newItem.quantity}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, quantity: Number(e.target.value) }))}
-                    />
-                  </div>
+              {/* Three Pricing Sections */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Retail Price Section */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h4 className="font-medium text-blue-900 mb-2">📊 Retail Price Section</h4>
+                  <label className="block text-sm font-medium text-blue-700 mb-1">MRP (₹)</label>
+                  <input type="number" step="0.01" className="input" placeholder="0.00" />
                 </div>
 
-                {/* Pricing Sections */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  {/* Retail Price Section */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-900 mb-2">Retail Price Section</h4>
-                    <label className="block text-sm font-medium text-blue-700 mb-1">MRP (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="input"
-                      value={newItem.mrp}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, mrp: Number(e.target.value) }))}
-                    />
-                  </div>
-
-                  {/* Trade Price Section */}
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h4 className="font-medium text-green-900 mb-2">Trade Price Section</h4>
-                    <label className="block text-sm font-medium text-green-700 mb-1">Trade Price (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="input"
-                      value={newItem.trade_price}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, trade_price: Number(e.target.value) }))}
-                    />
-                  </div>
-
-                  {/* Margin Section */}
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                    <h4 className="font-medium text-yellow-900 mb-2">Margin Section</h4>
-                    <label className="block text-sm font-medium text-yellow-700 mb-1">Margin (%)</label>
-                    <input
-                      type="text"
-                      className="input bg-yellow-100"
-                      value={calculateMargin(newItem.mrp, newItem.trade_price).toFixed(2)}
-                      readOnly
-                    />
-                  </div>
+                {/* Trade Price Section */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h4 className="font-medium text-green-900 mb-2">💰 Trade Price Section</h4>
+                  <label className="block text-sm font-medium text-green-700 mb-1">Trade Price (₹)</label>
+                  <input type="number" step="0.01" className="input" placeholder="0.00" />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Trade Discount (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="input"
-                      value={newItem.trade_discount}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, trade_discount: Number(e.target.value) }))}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Tax (₹)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      className="input"
-                      value={newItem.tax}
-                      onChange={(e) => setNewItem(prev => ({ ...prev, tax: Number(e.target.value) }))}
-                    />
-                  </div>
+                {/* Margin Section */}
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <h4 className="font-medium text-yellow-900 mb-2">📈 Margin Section</h4>
+                  <label className="block text-sm font-medium text-yellow-700 mb-1">Margin (%)</label>
+                  <input type="text" className="input bg-yellow-100" value="0.00" readOnly />
                 </div>
-
-                <button
-                  onClick={addItemToInvoice}
-                  className="btn-primary"
-                  disabled={!newItem.product_name || !newItem.batch}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addItemToInvoice();
-                    }
-                  }}
-                >
-                  Add Item (Enter)
-                </button>
               </div>
-
-              {/* Items Table */}
-              {newInvoice.items.length > 0 && (
-                <div className="border border-gray-200 rounded-lg overflow-hidden">
-                  <table className="table">
-                    <thead className="table-header">
-                      <tr className="table-row">
-                        <th className="table-head">Product</th>
-                        <th className="table-head">Batch</th>
-                        <th className="table-head">Expiry</th>
-                        <th className="table-head">MRP</th>
-                        <th className="table-head">Rate</th>
-                        <th className="table-head">Qty</th>
-                        <th className="table-head">Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {newInvoice.items.map((item) => (
-                        <tr key={item.id} className="table-row">
-                          <td className="table-cell">{item.product_name}</td>
-                          <td className="table-cell">{item.batch}</td>
-                          <td className="table-cell">{item.expiry_date}</td>
-                          <td className="table-cell">₹{item.mrp}</td>
-                          <td className="table-cell">₹{item.rate}</td>
-                          <td className="table-cell">{item.quantity}</td>
-                          <td className="table-cell">₹{item.final_amount.toFixed(2)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
             </div>
 
             <div className="p-6 border-t border-gray-200 flex justify-end space-x-4">
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="btn-secondary"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setShowCreateModal(false);
-                  }
-                }}
               >
-                Cancel
+                Cancel (Esc)
               </button>
-              <button
-                onClick={saveInvoice}
-                className="btn-primary"
-                disabled={!newInvoice.customer_name || newInvoice.items.length === 0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    saveInvoice();
-                  }
-                }}
-              >
-                Save Invoice
+              <button className="btn-primary">
+                Save Invoice (Ctrl+S)
               </button>
             </div>
           </div>
@@ -774,15 +569,15 @@ export function Billing() {
       {/* View Invoice Modal */}
       {showViewModal && currentInvoice && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-900">Invoice Details</h2>
                 <button
                   onClick={() => setShowViewModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
                 >
-                  ✕
+                  ×
                 </button>
               </div>
             </div>
