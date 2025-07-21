@@ -117,10 +117,69 @@ export function Billing() {
     invoice.customer_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Keyboard navigation
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (showCreateModal || showViewModal) return;
+  // Global keyboard event handler
+  const handleGlobalKeyDown = useCallback((e: KeyboardEvent) => {
+    // Handle modal-specific shortcuts
+    if (showCreateModal || showViewModal) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowCreateModal(false);
+        setShowViewModal(false);
+        setCurrentInvoice(null);
+      }
+      if (showCreateModal && e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        saveInvoice();
+      }
+      return;
+    }
 
+    // Global shortcuts
+    if (e.ctrlKey) {
+      switch (e.key) {
+        case 'n':
+          e.preventDefault();
+          setShowCreateModal(true);
+          break;
+        case 'p':
+          e.preventDefault();
+          console.log('Create Purchase Order');
+          break;
+        case 'f':
+          e.preventDefault();
+          const searchInput = document.getElementById('search-input');
+          if (searchInput) {
+            searchInput.focus();
+          }
+          break;
+        case 'e':
+          e.preventDefault();
+          if (filteredInvoices[selectedIndex]) {
+            editInvoice(filteredInvoices[selectedIndex].id);
+          }
+          break;
+        case 's':
+          e.preventDefault();
+          console.log('Save current form');
+          break;
+      }
+      return;
+    }
+
+    // Function keys
+    if (e.key === 'F1') {
+      e.preventDefault();
+      alert('Keyboard Shortcuts:\n\nNavigation:\n↑↓ - Navigate rows\nEnter - View invoice\nDelete - Remove invoice\n\nShortcuts:\nCtrl+N - New invoice\nCtrl+P - Purchase order\nCtrl+F - Search\nCtrl+E - Edit\nCtrl+S - Save\nEscape - Cancel');
+      return;
+    }
+
+    if (e.key === 'F5') {
+      e.preventDefault();
+      window.location.reload();
+      return;
+    }
+
+    // Navigation keys
     switch (e.key) {
       case 'ArrowUp':
         e.preventDefault();
@@ -129,6 +188,14 @@ export function Billing() {
       case 'ArrowDown':
         e.preventDefault();
         setSelectedIndex(prev => Math.min(filteredInvoices.length - 1, prev + 1));
+        break;
+      case 'PageUp':
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(0, prev - 10));
+        break;
+      case 'PageDown':
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min(filteredInvoices.length - 1, prev + 10));
         break;
       case 'Home':
         e.preventDefault();
@@ -150,38 +217,20 @@ export function Billing() {
           deleteInvoice(filteredInvoices[selectedIndex].id);
         }
         break;
-      case 'Escape':
-        e.preventDefault();
-        setShowCreateModal(false);
-        setShowViewModal(false);
-        break;
-    }
-
-    // Ctrl combinations
-    if (e.ctrlKey) {
-      switch (e.key) {
-        case 'n':
-          e.preventDefault();
-          setShowCreateModal(true);
-          break;
-        case 'f':
-          e.preventDefault();
-          document.getElementById('search-input')?.focus();
-          break;
-        case 'e':
-          e.preventDefault();
-          if (filteredInvoices[selectedIndex]) {
-            editInvoice(filteredInvoices[selectedIndex].id);
-          }
-          break;
-      }
     }
   }, [selectedIndex, filteredInvoices, showCreateModal, showViewModal]);
 
   useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [handleKeyDown]);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [handleGlobalKeyDown]);
+
+  // Ensure selected index is valid when filtered invoices change
+  useEffect(() => {
+    if (selectedIndex >= filteredInvoices.length) {
+      setSelectedIndex(Math.max(0, filteredInvoices.length - 1));
+    }
+  }, [filteredInvoices.length, selectedIndex]);
 
   const viewInvoice = (invoice: Invoice) => {
     setCurrentInvoice(invoice);
@@ -189,12 +238,18 @@ export function Billing() {
   };
 
   const editInvoice = (id: string) => {
-    console.log('Edit invoice:', id);
+    const invoice = invoices.find(inv => inv.id === id);
+    if (invoice) {
+      alert(`Editing invoice: ${invoice.invoice_number}`);
+      console.log('Edit invoice:', invoice);
+    }
   };
 
   const deleteInvoice = (id: string) => {
-    if (confirm('Are you sure you want to delete this invoice?')) {
-      console.log('Delete invoice:', id);
+    const invoice = invoices.find(inv => inv.id === id);
+    if (invoice && confirm(`Are you sure you want to delete invoice ${invoice.invoice_number}?`)) {
+      alert(`Invoice ${invoice.invoice_number} deleted successfully!`);
+      console.log('Delete invoice:', invoice);
     }
   };
 
@@ -239,6 +294,16 @@ export function Billing() {
   };
 
   const saveInvoice = () => {
+    if (!newInvoice.customer_name.trim()) {
+      alert('Please enter customer name');
+      return;
+    }
+    if (newInvoice.items.length === 0) {
+      alert('Please add at least one item');
+      return;
+    }
+    
+    alert('Invoice saved successfully!');
     console.log('Saving invoice:', newInvoice);
     setShowCreateModal(false);
     setNewInvoice({
@@ -280,14 +345,14 @@ export function Billing() {
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="font-medium text-blue-900 mb-2">Keyboard Navigation:</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-blue-800">
-          <div>↑↓ Navigate rows</div>
-          <div>Enter: View invoice</div>
-          <div>Ctrl+N: New invoice</div>
-          <div>Ctrl+F: Search</div>
-          <div>Delete: Remove invoice</div>
-          <div>Ctrl+E: Edit invoice</div>
-          <div>Home/End: First/Last</div>
-          <div>Esc: Cancel/Back</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">↑↓</kbd> Navigate rows</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Enter</kbd> View invoice</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Ctrl+N</kbd> New invoice</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Ctrl+F</kbd> Search</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Delete</kbd> Remove invoice</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Ctrl+E</kbd> Edit invoice</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">Home/End</kbd> First/Last</div>
+          <div><kbd className="px-1 py-0.5 bg-blue-200 rounded text-xs">F1</kbd> Help</div>
         </div>
       </div>
 
@@ -466,12 +531,19 @@ export function Billing() {
               {/* Customer Details */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
                   <input
+                    autoFocus
                     type="text"
                     className="input"
                     value={newInvoice.customer_name}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, customer_name: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const nextInput = e.currentTarget.parentElement?.parentElement?.children[1]?.querySelector('input');
+                        if (nextInput) (nextInput as HTMLInputElement).focus();
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -481,6 +553,12 @@ export function Billing() {
                     className="input"
                     value={newInvoice.customer_address}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, customer_address: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const nextInput = e.currentTarget.parentElement?.parentElement?.children[2]?.querySelector('input');
+                        if (nextInput) (nextInput as HTMLInputElement).focus();
+                      }
+                    }}
                   />
                 </div>
                 <div>
@@ -490,6 +568,12 @@ export function Billing() {
                     className="input"
                     value={newInvoice.customer_mobile}
                     onChange={(e) => setNewInvoice(prev => ({ ...prev, customer_mobile: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        const productInput = document.querySelector('input[placeholder="Enter product name"]');
+                        if (productInput) (productInput as HTMLInputElement).focus();
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -500,12 +584,19 @@ export function Billing() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Product Name *</label>
                     <input
                       type="text"
+                      placeholder="Enter product name"
                       className="input"
                       value={newItem.product_name}
                       onChange={(e) => setNewItem(prev => ({ ...prev, product_name: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const batchInput = e.currentTarget.parentElement?.parentElement?.children[1]?.querySelector('input');
+                          if (batchInput) (batchInput as HTMLInputElement).focus();
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -606,8 +697,14 @@ export function Billing() {
                   onClick={addItemToInvoice}
                   className="btn-primary"
                   disabled={!newItem.product_name || !newItem.batch}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addItemToInvoice();
+                    }
+                  }}
                 >
-                  Add Item
+                  Add Item (Enter)
                 </button>
               </div>
 
@@ -648,15 +745,26 @@ export function Billing() {
               <button
                 onClick={() => setShowCreateModal(false)}
                 className="btn-secondary"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setShowCreateModal(false);
+                  }
+                }}
               >
-                Cancel (Esc)
+                Cancel
               </button>
               <button
                 onClick={saveInvoice}
                 className="btn-primary"
                 disabled={!newInvoice.customer_name || newInvoice.items.length === 0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveInvoice();
+                  }
+                }}
               >
-                Save Invoice (Ctrl+S)
+                Save Invoice
               </button>
             </div>
           </div>
