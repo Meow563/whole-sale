@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Search, Eye, Edit, Trash2, Download, Send, FileText, DollarSign, Users, TrendingUp, ShoppingCart } from 'lucide-react';
 
+// Add this at the top to ensure we're capturing events
+const DEBUG_KEYBOARD = true;
+
 interface Invoice {
   id: string;
   invoice_number: string;
@@ -100,7 +103,9 @@ export function Billing() {
 
   // Keyboard event handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    console.log('Key pressed:', event.key, 'Ctrl:', event.ctrlKey, 'Alt:', event.altKey);
+    if (DEBUG_KEYBOARD) {
+      console.log('🎹 Key pressed:', event.key, 'Ctrl:', event.ctrlKey, 'Alt:', event.altKey, 'Target:', event.target);
+    }
     
     // Prevent default for our handled keys
     const handledKeys = ['ArrowUp', 'ArrowDown', 'Enter', 'Delete', 'Home', 'End', 'PageUp', 'PageDown', 'F1', 'F5'];
@@ -108,6 +113,8 @@ export function Billing() {
     
     if (handledKeys.includes(event.key) || (event.ctrlKey && handledCtrlKeys.includes(event.key.toLowerCase()))) {
       event.preventDefault();
+      event.stopPropagation();
+      if (DEBUG_KEYBOARD) console.log('🚫 Prevented default for:', event.key);
     }
 
     // Handle Escape key
@@ -117,13 +124,14 @@ export function Billing() {
         setShowCreateModal(false);
         setShowViewModal(false);
         setCurrentInvoice(null);
-        console.log('Modal closed with Escape');
+        if (DEBUG_KEYBOARD) console.log('✅ Modal closed with Escape');
       }
       return;
     }
 
     // Don't handle other keys if modal is open
     if (showCreateModal || showViewModal) {
+      if (DEBUG_KEYBOARD) console.log('⏸️ Modal is open, ignoring key:', event.key);
       return;
     }
 
@@ -132,7 +140,7 @@ export function Billing() {
       case 'ArrowUp':
         setSelectedIndex(prev => {
           const newIndex = Math.max(0, prev - 1);
-          console.log('Arrow Up - New index:', newIndex);
+          if (DEBUG_KEYBOARD) console.log('⬆️ Arrow Up - New index:', newIndex);
           return newIndex;
         });
         break;
@@ -140,53 +148,53 @@ export function Billing() {
       case 'ArrowDown':
         setSelectedIndex(prev => {
           const newIndex = Math.min(filteredInvoices.length - 1, prev + 1);
-          console.log('Arrow Down - New index:', newIndex);
+          if (DEBUG_KEYBOARD) console.log('⬇️ Arrow Down - New index:', newIndex);
           return newIndex;
         });
         break;
         
       case 'Home':
         setSelectedIndex(0);
-        console.log('Home - Index set to 0');
+        if (DEBUG_KEYBOARD) console.log('🏠 Home - Index set to 0');
         break;
         
       case 'End':
         setSelectedIndex(filteredInvoices.length - 1);
-        console.log('End - Index set to:', filteredInvoices.length - 1);
+        if (DEBUG_KEYBOARD) console.log('🔚 End - Index set to:', filteredInvoices.length - 1);
         break;
         
       case 'PageUp':
         setSelectedIndex(prev => Math.max(0, prev - 10));
-        console.log('Page Up');
+        if (DEBUG_KEYBOARD) console.log('📄⬆️ Page Up');
         break;
         
       case 'PageDown':
         setSelectedIndex(prev => Math.min(filteredInvoices.length - 1, prev + 10));
-        console.log('Page Down');
+        if (DEBUG_KEYBOARD) console.log('📄⬇️ Page Down');
         break;
         
       case 'Enter':
         if (filteredInvoices[selectedIndex]) {
           viewInvoice(filteredInvoices[selectedIndex]);
-          console.log('Enter - Viewing invoice:', filteredInvoices[selectedIndex].invoice_number);
+          if (DEBUG_KEYBOARD) console.log('✅ Enter - Viewing invoice:', filteredInvoices[selectedIndex].invoice_number);
         }
         break;
         
       case 'Delete':
         if (filteredInvoices[selectedIndex]) {
           deleteInvoice(filteredInvoices[selectedIndex].id);
-          console.log('Delete - Deleting invoice:', filteredInvoices[selectedIndex].invoice_number);
+          if (DEBUG_KEYBOARD) console.log('🗑️ Delete - Deleting invoice:', filteredInvoices[selectedIndex].invoice_number);
         }
         break;
         
       case 'F1':
         showHelp();
-        console.log('F1 - Showing help');
+        if (DEBUG_KEYBOARD) console.log('❓ F1 - Showing help');
         break;
         
       case 'F5':
         window.location.reload();
-        console.log('F5 - Refreshing page');
+        if (DEBUG_KEYBOARD) console.log('🔄 F5 - Refreshing page');
         break;
     }
 
@@ -195,32 +203,32 @@ export function Billing() {
       switch (event.key.toLowerCase()) {
         case 'n':
           setShowCreateModal(true);
-          console.log('Ctrl+N - Creating new invoice');
+          if (DEBUG_KEYBOARD) console.log('🆕 Ctrl+N - Creating new invoice');
           break;
           
         case 'p':
           createPurchaseOrder();
-          console.log('Ctrl+P - Creating purchase order');
+          if (DEBUG_KEYBOARD) console.log('🛒 Ctrl+P - Creating purchase order');
           break;
           
         case 'f':
           const searchInput = document.getElementById('search-input') as HTMLInputElement;
           if (searchInput) {
             searchInput.focus();
-            console.log('Ctrl+F - Focusing search');
+            if (DEBUG_KEYBOARD) console.log('🔍 Ctrl+F - Focusing search');
           }
           break;
           
         case 'e':
           if (filteredInvoices[selectedIndex]) {
             editInvoice(filteredInvoices[selectedIndex].id);
-            console.log('Ctrl+E - Editing invoice');
+            if (DEBUG_KEYBOARD) console.log('✏️ Ctrl+E - Editing invoice');
           }
           break;
           
         case 's':
           saveCurrentForm();
-          console.log('Ctrl+S - Saving form');
+          if (DEBUG_KEYBOARD) console.log('💾 Ctrl+S - Saving form');
           break;
       }
     }
@@ -228,25 +236,40 @@ export function Billing() {
 
   // Add event listener
   useEffect(() => {
-    console.log('Adding keyboard event listener');
-    document.addEventListener('keydown', handleKeyDown);
+    if (DEBUG_KEYBOARD) console.log('🎯 Adding keyboard event listener');
+    
+    // Add to document and window for better capture
+    document.addEventListener('keydown', handleKeyDown, true);
+    window.addEventListener('keydown', handleKeyDown, true);
     
     return () => {
-      console.log('Removing keyboard event listener');
-      document.removeEventListener('keydown', handleKeyDown);
+      if (DEBUG_KEYBOARD) console.log('🗑️ Removing keyboard event listener');
+      document.removeEventListener('keydown', handleKeyDown, true);
+      window.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [handleKeyDown]);
+
+  // Force focus on component mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      document.body.focus();
+      if (DEBUG_KEYBOARD) console.log('🎯 Focused document body for keyboard events');
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Action functions
   const viewInvoice = (invoice: Invoice) => {
     setCurrentInvoice(invoice);
     setShowViewModal(true);
-    alert(`Viewing invoice: ${invoice.invoice_number}`);
+    if (DEBUG_KEYBOARD) console.log('👁️ Viewing invoice:', invoice.invoice_number);
   };
 
   const editInvoice = (id: string) => {
     const invoice = invoices.find(inv => inv.id === id);
     if (invoice) {
+      if (DEBUG_KEYBOARD) console.log('✏️ Editing invoice:', invoice.invoice_number);
       alert(`Editing invoice: ${invoice.invoice_number}`);
     }
   };
@@ -254,19 +277,23 @@ export function Billing() {
   const deleteInvoice = (id: string) => {
     const invoice = invoices.find(inv => inv.id === id);
     if (invoice && confirm(`Delete invoice ${invoice.invoice_number}?`)) {
+      if (DEBUG_KEYBOARD) console.log('🗑️ Deleted invoice:', invoice.invoice_number);
       alert(`Invoice ${invoice.invoice_number} deleted!`);
     }
   };
 
   const createPurchaseOrder = () => {
+    if (DEBUG_KEYBOARD) console.log('🛒 Creating purchase order');
     alert('Creating new purchase order...');
   };
 
   const saveCurrentForm = () => {
+    if (DEBUG_KEYBOARD) console.log('💾 Saving form');
     alert('Saving current form...');
   };
 
   const showHelp = () => {
+    if (DEBUG_KEYBOARD) console.log('❓ Showing help');
     alert(`Keyboard Shortcuts:
 
 Navigation:
