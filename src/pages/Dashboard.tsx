@@ -12,7 +12,9 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { AIInsights } from '../components/AI/AIInsights';
 import { AIChat } from '../components/AI/AIChat';
-import { grokAI } from '../lib/grokApi';
+import { GameInterface } from '../components/GameUI/GameInterface';
+import { AnimatedCard } from '../components/GameUI/AnimatedCard';
+import { showNotification } from '../components/GameUI/FloatingNotification';
 
 const Dashboard = () => {
   // Mock data for demonstration
@@ -47,6 +49,11 @@ const Dashboard = () => {
       icon: DollarSign,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
+      onClick: () => showNotification({
+        type: 'success',
+        title: 'Revenue Updated!',
+        message: 'Revenue data has been refreshed successfully.'
+      })
     },
     {
       title: 'Total Orders',
@@ -55,6 +62,11 @@ const Dashboard = () => {
       icon: ShoppingCart,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      onClick: () => showNotification({
+        type: 'info',
+        title: 'Orders Synced!',
+        message: 'Order data synchronized with latest updates.'
+      })
     },
     {
       title: 'Active Customers',
@@ -63,6 +75,11 @@ const Dashboard = () => {
       icon: Users,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
+      onClick: () => showNotification({
+        type: 'success',
+        title: 'Customer Data!',
+        message: 'Customer analytics updated successfully.'
+      })
     },
     {
       title: 'Low Stock Items',
@@ -71,6 +88,11 @@ const Dashboard = () => {
       icon: AlertTriangle,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
+      onClick: () => showNotification({
+        type: 'error',
+        title: 'Stock Alert!',
+        message: 'Some items are running low on stock.'
+      })
     },
   ];
 
@@ -86,8 +108,10 @@ const Dashboard = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here's what's happening with your business today.</p>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            🎮 MedWholesale Pro Dashboard
+          </h1>
+          <p className="text-gray-600">Level up your business with gamified management!</p>
         </div>
         <div className="flex items-center space-x-2 text-sm text-gray-500">
           <Calendar className="w-4 h-4" />
@@ -100,23 +124,22 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Game Interface */}
+      <GameInterface />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-                <p className={`text-sm mt-1 ${stat.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
-                  {stat.change} from last month
-                </p>
-              </div>
-              <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`w-6 h-6 ${stat.color}`} />
-              </div>
-            </div>
-          </div>
+          <AnimatedCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            change={stat.change}
+            icon={stat.icon}
+            color={stat.color}
+            bgColor={stat.bgColor}
+            onClick={stat.onClick}
+          />
         ))}
       </div>
 

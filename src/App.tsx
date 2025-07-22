@@ -10,6 +10,7 @@ import { Billing } from './pages/Billing';
 import { Customers } from './pages/Customers';
 import { Reports } from './pages/Reports';
 import { Accounting } from './pages/Accounting';
+import { NotificationManager } from './components/GameUI/FloatingNotification';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -59,6 +60,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <NotificationManager />
         <AppRoutes />
       </Router>
     </AuthProvider>
